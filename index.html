@@ -73,7 +73,6 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.success { border-color: var(--green); color: #7bc49a; }
   .toast.error { border-color: var(--red); color: #e07070; }
-  /* Setup */
   .setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 32px 24px; gap: 20px; text-align: center; }
   .setup-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); }
   .setup-sub { font-size: 12px; color: var(--text2); line-height: 1.7; max-width: 280px; }
@@ -84,13 +83,12 @@
   .setup-note { font-size: 10px; color: var(--text3); line-height: 1.6; max-width: 280px; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(139,58,58,0.4); } 50% { box-sizing: 0 0 0 8px rgba(139,58,58,0); } }
+  @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(139,58,58,0.4); } 50% { box-shadow: 0 0 0 8px rgba(139,58,58,0); } }
   @keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
 </style>
 </head>
 <body>
 
-<!-- SETUP (solo primera vez) -->
 <div id="setupScreen" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
   <div class="setup-screen">
     <div>
@@ -104,7 +102,6 @@
   </div>
 </div>
 
-<!-- APP PRINCIPAL -->
 <div id="mainApp" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
   <div class="header">
     <div class="header-left">
@@ -140,7 +137,7 @@
     <div class="input-area">
       <div class="recording-bar" id="recordingBar">
         <div class="rec-dot"></div>
-        <span>Grabando…</span>
+        <span>Escuchando…</span>
         <span class="rec-timer" id="recTimer">0:00</span>
       </div>
       <div class="input-row">
@@ -160,8 +157,6 @@ const N8N_CREATE = 'https://danimoro997.app.n8n.cloud/webhook/crear-evento';
 
 let apiKey = '';
 let conversationHistory = [];
-let mediaRecorder = null;
-let audioChunks = [];
 let isRecording = false;
 let recInterval = null;
 let recSeconds = 0;
@@ -180,10 +175,7 @@ REGLAS:
 window.addEventListener('load', () => {
   updateHeaderDate();
   const saved = localStorage.getItem('dani_agenda_key');
-  if (saved) {
-    apiKey = saved;
-    showApp();
-  }
+  if (saved) { apiKey = saved; showApp(); }
 });
 
 function saveApiKey() {
@@ -308,75 +300,71 @@ function showTyping(show) {
   document.getElementById('chatMessages').scrollTop = 99999;
 }
 
-async function toggleRecording() {
-  if (isRecording) { stopRecording(); return; }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(t=>t.stop());
-      await transcribeAudio(new Blob(audioChunks,{type:'audio/webm'}));
-    };
-    mediaRecorder.start();
-    isRecording = true; recSeconds = 0;
+function toggleRecording() {
+  if (isRecording) {
+    isRecording = false;
+    clearInterval(recInterval);
+    document.getElementById('micBtn').classList.remove('recording');
+    document.getElementById('micBtn').textContent = '🎙';
+    document.getElementById('recordingBar').classList.remove('show');
+    if (window._recognition) window._recognition.stop();
+    return;
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('Navegador no soporta voz', 'error'); return; }
+
+  const recognition = new SR();
+  window._recognition = recognition;
+  recognition.lang = 'es-ES';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    isRecording = true;
+    recSeconds = 0;
     document.getElementById('micBtn').classList.add('recording');
     document.getElementById('micBtn').textContent = '⏹';
     document.getElementById('recordingBar').classList.add('show');
-    recInterval = setInterval(()=>{
+    recInterval = setInterval(() => {
       recSeconds++;
-      const m=Math.floor(recSeconds/60),s=recSeconds%60;
-      document.getElementById('recTimer').textContent=`${m}:${s.toString().padStart(2,'0')}`;
-    },1000);
-  } catch(e) { showToast('Sin acceso al micrófono','error'); }
-}
-
-function stopRecording() {
-  if (mediaRecorder&&isRecording) {
-    mediaRecorder.stop(); isRecording=false; clearInterval(recInterval);
-    document.getElementById('micBtn').classList.remove('recording');
-    document.getElementById('micBtn').textContent='🎙';
-    document.getElementById('recordingBar').classList.remove('show');
-  }
-}
-
-async function transcribeAudio(blob) {
-  showToast('Transcribiendo…');
-  try {
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    reader.onloadend = async () => {
-      const base64 = reader.result.split(',')[1];
-      const res = await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:[
-          {type:'text',text:'Transcribe exactamente lo que dice este audio en español. Devuelve SOLO la transcripción.'},
-          {type:'document',source:{type:'base64',media_type:blob.type||'audio/webm',data:base64}}
-        ]}]})
-      });
-      if (res.ok) {
-        const transcription = (await res.json()).content[0].text.trim();
-        document.getElementById('textInput').value = transcription;
-        autoResize(document.getElementById('textInput'));
-        showToast('✓ Transcrito');
-        setTimeout(()=>sendMessage(),300);
-      } else { useWebSpeech(); }
-    };
-  } catch(e) { useWebSpeech(); }
-}
-
-function useWebSpeech() {
-  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-  if (!SR) { showToast('Escribe tu mensaje','error'); return; }
-  const r = new SR(); r.lang='es-ES';
-  r.onresult = e => {
-    document.getElementById('textInput').value = e.results[0][0].transcript;
-    autoResize(document.getElementById('textInput'));
-    setTimeout(()=>sendMessage(),300);
+      const m = Math.floor(recSeconds/60), s = recSeconds%60;
+      document.getElementById('recTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    }, 1000);
   };
-  r.start();
+
+  recognition.onresult = (e) => {
+    clearInterval(recInterval);
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('recording');
+    document.getElementById('micBtn').textContent = '🎙';
+    document.getElementById('recordingBar').classList.remove('show');
+    const text = e.results[0][0].transcript;
+    document.getElementById('textInput').value = text;
+    autoResize(document.getElementById('textInput'));
+    setTimeout(() => sendMessage(), 300);
+  };
+
+  recognition.onerror = () => {
+    clearInterval(recInterval);
+    isRecording = false;
+    document.getElementById('micBtn').classList.remove('recording');
+    document.getElementById('micBtn').textContent = '🎙';
+    document.getElementById('recordingBar').classList.remove('show');
+    showToast('Error con el micrófono', 'error');
+  };
+
+  recognition.onend = () => {
+    if (isRecording) {
+      clearInterval(recInterval);
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('micBtn').textContent = '🎙';
+      document.getElementById('recordingBar').classList.remove('show');
+    }
+  };
+
+  recognition.start();
 }
 
 function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
