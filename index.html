@@ -247,11 +247,12 @@ function renderWeekEvents(events) {
 
   let html = '';
   days.forEach(day => {
-    const dayStr = day.toISOString().split('T')[0];
+    const dayStr = day.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD en local
     const isToday = day.toDateString() === new Date().toDateString();
     const dayEvents = events.filter(ev => {
-      const evDate = (ev.start?.dateTime || ev.start?.date || '').split('T')[0];
-      return evDate === dayStr;
+      const evStart = ev.start?.dateTime ? new Date(ev.start.dateTime) : new Date(ev.start?.date);
+const evDate = evStart.toLocaleDateString('en-CA');
+return evDate === dayStr;
     }).sort((a,b) => (a.start?.dateTime||'').localeCompare(b.start?.dateTime||''));
 
     const dayName = day.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'short' });
