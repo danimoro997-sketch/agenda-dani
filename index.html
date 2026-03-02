@@ -12,19 +12,10 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0a;
-    --bg2: #111111;
-    --bg3: #1a1a1a;
-    --border: #222222;
-    --text: #e8e4dc;
-    --text2: #6b6760;
-    --text3: #3a3835;
-    --accent: #c9a96e;
-    --accent2: #8b6b3d;
-    --green: #4a7c59;
-    --red: #8b3a3a;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #0a0a0a; --bg2: #111111; --bg3: #1a1a1a; --border: #222222;
+    --text: #e8e4dc; --text2: #6b6760; --text3: #3a3835;
+    --accent: #c9a96e; --accent2: #8b6b3d; --green: #4a7c59; --red: #8b3a3a;
+    --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
@@ -33,7 +24,7 @@
   .header-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); letter-spacing: -0.3px; }
   .header-date { font-size: 10px; color: var(--text2); letter-spacing: 0.8px; text-transform: uppercase; }
   .tab-switcher { display: flex; gap: 4px; background: var(--bg3); padding: 3px; border-radius: 10px; }
-  .tab-btn { padding: 5px 12px; border-radius: 7px; border: none; background: transparent; color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+  .tab-btn { padding: 5px 12px; border-radius: 7px; border: none; background: transparent; color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: var(--bg); color: var(--accent); }
   .view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
   .view.active { display: flex; }
@@ -41,7 +32,7 @@
   .agenda-scroll::-webkit-scrollbar { display: none; }
   .day-header { font-size: 10px; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
   .event-card { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: flex-start; animation: fadeIn 0.3s ease; }
-  .event-time { font-size: 11px; color: var(--text2); white-space: nowrap; padding-top: 2px; min-width: 48px; letter-spacing: 0.3px; }
+  .event-time { font-size: 11px; color: var(--text2); white-space: nowrap; padding-top: 2px; min-width: 48px; }
   .event-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
   .event-info { flex: 1; }
   .event-title { font-size: 13px; color: var(--text); margin-bottom: 3px; }
@@ -82,15 +73,39 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.success { border-color: var(--green); color: #7bc49a; }
   .toast.error { border-color: var(--red); color: #e07070; }
+  /* Setup */
+  .setup-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 32px 24px; gap: 20px; text-align: center; }
+  .setup-title { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); }
+  .setup-sub { font-size: 12px; color: var(--text2); line-height: 1.7; max-width: 280px; }
+  .setup-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; outline: none; text-align: center; }
+  .setup-input:focus { border-color: var(--accent2); }
+  .setup-btn { width: 100%; padding: 14px; background: var(--accent2); border: none; border-radius: 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; cursor: pointer; transition: opacity 0.2s; }
+  .setup-btn:active { opacity: 0.8; }
+  .setup-note { font-size: 10px; color: var(--text3); line-height: 1.6; max-width: 280px; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(139,58,58,0.4); } 50% { box-shadow: 0 0 0 8px rgba(139,58,58,0); } }
+  @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(139,58,58,0.4); } 50% { box-sizing: 0 0 0 8px rgba(139,58,58,0); } }
   @keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
 </style>
 </head>
 <body>
 
-<div id="mainApp" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+<!-- SETUP (solo primera vez) -->
+<div id="setupScreen" style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+  <div class="setup-screen">
+    <div>
+      <div class="setup-title">Agenda</div>
+      <div style="font-family:'DM Serif Display',serif; font-style:italic; font-size:14px; color:var(--text2); margin-top:4px;">tu asistente personal</div>
+    </div>
+    <div class="setup-sub">Introduce tu API Key de Anthropic una sola vez. Se guardará en tu dispositivo.</div>
+    <input type="password" class="setup-input" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+    <button class="setup-btn" onclick="saveApiKey()">Guardar y entrar →</button>
+    <div class="setup-note">Tu clave se guarda solo en este dispositivo y nunca se comparte con nadie.</div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div id="mainApp" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
   <div class="header">
     <div class="header-left">
       <div class="header-title">Agenda</div>
@@ -140,10 +155,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const apiKey = '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';
 const N8N_READ = 'https://danimoro997.app.n8n.cloud/webhook/leer-eventos';
 const N8N_CREATE = 'https://danimoro997.app.n8n.cloud/webhook/crear-evento';
 
+let apiKey = '';
 let conversationHistory = [];
 let mediaRecorder = null;
 let audioChunks = [];
@@ -164,8 +179,26 @@ REGLAS:
 
 window.addEventListener('load', () => {
   updateHeaderDate();
-  loadTodayEvents();
+  const saved = localStorage.getItem('dani_agenda_key');
+  if (saved) {
+    apiKey = saved;
+    showApp();
+  }
 });
+
+function saveApiKey() {
+  const input = document.getElementById('apiKeyInput').value.trim();
+  if (!input.startsWith('sk-')) { showToast('Clave no válida', 'error'); return; }
+  apiKey = input;
+  localStorage.setItem('dani_agenda_key', apiKey);
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  loadTodayEvents();
+}
 
 function updateHeaderDate() {
   document.getElementById('headerDate').textContent = new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' }).toUpperCase();
