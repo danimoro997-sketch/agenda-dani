@@ -219,7 +219,18 @@ async function loadWeekEvents() {
   document.getElementById('agendaLoading').style.display = 'flex';
   document.getElementById('eventsList').style.display = 'none';
   try {
-    const res = await fetch(N8N_READ);
+    const today = new Date();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - today.getDay() + 1);
+    monday.setHours(0,0,0,0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23,59,59,0);
+
+    const after = monday.toISOString().split('.')[0] + 'Z';
+    const before = sunday.toISOString().split('.')[0] + 'Z';
+
+    const res = await fetch(`${N8N_READ}?after=${after}&before=${before}`);
     const data = await res.json();
     renderWeekEvents(data.events || []);
   } catch(e) { renderWeekEvents([]); }
